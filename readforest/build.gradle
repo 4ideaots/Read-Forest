@@ -18,31 +18,23 @@ repositories {
 }
 
 dependencies {
-	// === Spring Boot Core ===
-	implementation 'org.springframework.boot:spring-boot-starter-web'           // REST API (Controller, Jackson JSON)
-	implementation 'org.springframework.boot:spring-boot-starter-validation'    // @Valid, @NotNull 등 입력 검증
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'      // JPA + Hibernate (DB 영속성)
-	implementation 'org.springframework.boot:spring-boot-starter-security'      // Spring Security (인증/인가)
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'       // WebClient (외부 도서 API 호출용)
+	implementation 'org.springframework.boot:spring-boot-starter-web' 
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa' 
+	implementation 'org.springframework.boot:spring-boot-starter-security' 
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'  
 
-	// === Database ===
-	runtimeOnly 'com.mysql:mysql-connector-j'                                  // MySQL JDBC 드라이버
+	runtimeOnly 'com.mysql:mysql-connector-j'
 
-	// === JWT (JSON Web Token) ===
-	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'                           // JWT API
-	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'                            // JWT 구현체
-	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'                          // JWT JSON 직렬화
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'    
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'      
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'   
 
-	// === AWS S3 (에셋 스토리지) ===
-	implementation 'software.amazon.awssdk:s3:2.31.1'                          // AWS SDK v2 S3 클라이언트
-
-	// === Lombok (보일러플레이트 제거) ===
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
-	// === Test ===
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.security:spring-security-test'      // Security 테스트 지원
+	testImplementation 'org.springframework.security:spring-security-test'  
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
