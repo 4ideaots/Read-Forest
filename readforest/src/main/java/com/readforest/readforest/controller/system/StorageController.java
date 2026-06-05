@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * 파일 처리 컨트롤러.
  *
- * <p>H2 데이터베이스를 활용한 이미지 및 파일 업로드/다운로드 컨트롤러입니다.</p>
+ * <p>MySQL 데이터베이스를 활용한 이미지 및 파일 업로드/다운로드 컨트롤러입니다.</p>
  */
 @RestController
 @RequestMapping("/api/storage")
@@ -26,7 +26,7 @@ public class StorageController {
     /**
      * 파일을 업로드합니다.
      *
-     * <p>클라이언트로부터 전달받은 파일을 H2 데이터베이스에 BLOB 형태로 저장하고,
+     * <p>클라이언트로부터 전달받은 파일을 MySQL 데이터베이스에 BLOB 형태로 저장하고,
      * 해당 파일에 접근할 수 있는 다운로드 URL을 반환합니다.</p>
      *
      * @param file 업로드할 파일 (multipart/form-data)
@@ -60,7 +60,7 @@ public class StorageController {
     /**
      * 파일을 조회/다운로드합니다.
      *
-     * <p>파일 ID를 기반으로 H2 데이터베이스에서 파일 데이터를 조회하여 반환합니다.</p>
+     * <p>파일 ID를 기반으로 MySQL 데이터베이스에서 파일 데이터를 조회하여 반환합니다.</p>
      *
      * @param id 파일 ID
      * @return 파일 데이터 바이트 배열

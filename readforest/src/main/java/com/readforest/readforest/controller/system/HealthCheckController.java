@@ -26,7 +26,7 @@ public class HealthCheckController {
     /**
      * 서버 상태를 확인합니다.
      *
-     * <p>서버 런타임 상태와 데이터베이스(H2) 연결 상태를 실시간으로 확인하여 응답합니다.
+     * <p>서버 런타임 상태와 데이터베이스(MySQL) 연결 상태를 실시간으로 확인하여 응답합니다.
      * DB 조회 실패 시 503 Service Unavailable을 반환합니다.</p>
      *
      * @return 서버 및 DB 상태 정보를 포함한 응답
@@ -37,7 +37,7 @@ public class HealthCheckController {
         statusMap.put("status", "UP");
 
         try {
-            // H2 데이터베이스 연결 상태 검증 (단순 쿼리 실행)
+            // MySQL 데이터베이스 연결 상태 검증 (단순 쿼리 실행)
             jdbcTemplate.execute("SELECT 1");
             statusMap.put("database", "UP");
             return ResponseEntity.ok(statusMap);
