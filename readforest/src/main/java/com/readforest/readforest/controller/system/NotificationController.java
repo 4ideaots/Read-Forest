@@ -1,15 +1,11 @@
 package com.readforest.readforest.controller.system;
 
+import com.readforest.readforest.entity.NotificationEntity;
+import com.readforest.readforest.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -23,17 +19,34 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class NotificationController {
 
+    private final NotificationRepository notificationRepository;
+
     /**
      * 알림 목록을 조회합니다.
      *
-     * <p>현재 사용자의 전체 알림 목록을 반환합니다.</p>
+     * <p>현재 사용자의 전체 알림 목록을 최근 생성 순으로 반환합니다.</p>
      *
      * @return 알림 목록을 포함한 응답
      */
     @GetMapping
     public ResponseEntity<?> getNotifications() {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Collections.emptyList());
+        return ResponseEntity.ok(notificationRepository.findAllByOrderByCreatedAtDesc());
+    }
+
+    /**
+     * 알림을 직접 생성합니다. (테스트용 및 알림 발송용 API)
+     *
+     * @param body 알림 메시지를 포함한 맵
+     * @return 생성된 알림 정보
+     */
+    @PostMapping
+    public ResponseEntity<?> createNotification(@RequestBody Map<String, String> body) {
+        String message = body.get("message");
+        if (message == null || message.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "메시지 내용이 비어있습니다."));
+        }
+        NotificationEntity notification = new NotificationEntity(message);
+        return ResponseEntity.ok(notificationRepository.save(notification));
     }
 
     /**
@@ -46,8 +59,16 @@ public class NotificationController {
      */
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<?> markAsRead(@PathVariable Long notificationId) {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Map.of("message", "알림이 읽음 처리되었습니다."));
+        return notificationRepository.findById(notificationId)
+            .map(notification -> {
+                notification.setRead(true);
+                notificationRepository.save(notification);
+                return ResponseEntity.ok(Map.of(
+                    "message", "알림이 읽음 처리되었습니다.",
+                    "notificationId", notificationId
+                ));
+            })
+            .orElse(ResponseEntity.notFound().build());
     }
 
     /**
@@ -60,7 +81,14 @@ public class NotificationController {
      */
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<?> deleteNotification(@PathVariable Long notificationId) {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Map.of("message", "알림이 삭제되었습니다."));
+        return notificationRepository.findById(notificationId)
+            .map(notification -> {
+                notificationRepository.delete(notification);
+                return ResponseEntity.ok(Map.of(
+                    "message", "알림이 삭제되었습니다.",
+                    "notificationId", notificationId
+                ));
+            })
+            .orElse(ResponseEntity.notFound().build());
     }
 }
