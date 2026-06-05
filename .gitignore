@@ -1,0 +1,82 @@
+# ==========================================
+# Operating System Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==========================================
+# Node / npm
+# ==========================================
+node_modules/
+dist/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==========================================
+# Gradle & Java
+# ==========================================
+.gradle/
+build/
+bin/
+out/
+readforest/.gradle/
+readforest/build/
+readforest/bin/
+readforest/out/
+
+# ==========================================
+# IntelliJ IDEA
+# ==========================================
+.idea/
+*.iml
+*.ipr
+*.iws
+readforest/.idea/
+readforest/*.iml
+
+# ==========================================
+# Eclipse
+# ==========================================
+.metadata/
+.settings/
+.classpath
+.project
+readforest/.settings/
+readforest/.classpath
+readforest/.project
+
+# ==========================================
+# Visual Studio Code
+# ==========================================
+.vscode/
+
+# ==========================================
+# Spring Boot / Application Config / Secrets
+# ==========================================
+**/application-local.properties
+**/application-local.yml
+**/application-dev.properties
+**/application-dev.yml
+**/application-prod.properties
+**/application-prod.yml
+
+# ==========================================
+# Log & Temp Files
+# ==========================================
+*.log
+*.tmp
+*.bak
+*~
+*.swp
