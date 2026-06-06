@@ -1,10 +1,11 @@
 package com.readforest.readforest.controller.social;
 
 import lombok.RequiredArgsConstructor;
+import com.readforest.readforest.dto.GuestbookRequest;
+import com.readforest.readforest.service.GuestbookService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 
 /**
  * 방명록 컨트롤러.
@@ -14,7 +15,7 @@ import java.util.Collections;
 @RestController
 @RequiredArgsConstructor
 public class GuestbookController {
-
+    private final GuestbookService guestbookService;
     /**
      * 특정 유저의 숲에 방명록을 작성한다.
      *
@@ -22,10 +23,13 @@ public class GuestbookController {
      * @return 작성된 방명록 정보
      */
     @PostMapping("/api/forests/{userId}/guestbook")
-    public ResponseEntity<?> writeGuestbook(@PathVariable Long userId) {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok().build();
-    }
+    public ResponseEntity<?> writeGuestbook(
+        @PathVariable Long userId,
+        @RequestHeader("X-User-Id") Long writerId,
+        @RequestBody GuestbookRequest request) {
+    guestbookService.writeGuestbook(userId, writerId, request);
+    return ResponseEntity.ok().build();
+        }
 
     /**
      * 특정 유저의 숲에 작성된 방명록 목록을 조회한다.
@@ -35,8 +39,7 @@ public class GuestbookController {
      */
     @GetMapping("/api/forests/{userId}/guestbook")
     public ResponseEntity<?> getGuestbook(@PathVariable Long userId) {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Collections.emptyList());
+        return ResponseEntity.ok(guestbookService.getGuestbookList(userId));
     }
 
     /**
@@ -46,8 +49,12 @@ public class GuestbookController {
      * @return 삭제 처리 결과
      */
     @DeleteMapping("/api/guestbook/{guestbookId}")
-    public ResponseEntity<?> deleteGuestbook(@PathVariable Long guestbookId) {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.noContent().build();
-    }
+    public ResponseEntity<?> deleteGuestbook(
+        @PathVariable Long guestbookId,
+        @RequestHeader("X-User-Id") Long requestUserId) {
+    guestbookService.deleteGuestbook(guestbookId, requestUserId);
+    return ResponseEntity.noContent().build();
 }
+
+}
+
