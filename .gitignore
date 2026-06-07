@@ -80,3 +80,5 @@ readforest/.project
 *.bak
 *~
 *.swp
+
+report/*
