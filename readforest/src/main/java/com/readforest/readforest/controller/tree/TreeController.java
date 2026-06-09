@@ -1,7 +1,13 @@
 package com.readforest.readforest.controller.tree;
 
+import com.readforest.readforest.dto.TreeRequestDto;
+import com.readforest.readforest.dto.TreeResponseDto;
+import com.readforest.readforest.service.TreeService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -17,17 +23,21 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TreeController {
 
+    private final TreeService treeService;
+
     /**
      * 묘목 심기 (나무 생성).
      *
      * <p>새로운 나무 객체를 생성하고 초기 상태로 등록한다.</p>
      *
+     * @param request 묘목 생성을 위한 책 정보 DTO
      * @return 생성된 나무 정보를 담은 응답
      */
     @PostMapping
-    public ResponseEntity<?> plantTree() {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Map.of("message", "묘목이 심어졌습니다."));
+    public ResponseEntity<TreeResponseDto.Detail> plantTree(@Valid @RequestBody TreeRequestDto.Plant request) {
+        Long userId = getCurrentUserId();
+        TreeResponseDto.Detail response = treeService.plantTree(userId, request.getBookId());
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -39,9 +49,9 @@ public class TreeController {
      * @return 나무 기본 정보를 담은 응답
      */
     @GetMapping("/{treeId}")
-    public ResponseEntity<?> getTree(@PathVariable Long treeId) {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Map.of("treeId", treeId));
+    public ResponseEntity<TreeResponseDto.Detail> getTree(@PathVariable Long treeId) {
+        TreeResponseDto.Detail response = treeService.getTreeDetail(treeId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -54,7 +64,20 @@ public class TreeController {
      */
     @DeleteMapping("/{treeId}")
     public ResponseEntity<?> removeTree(@PathVariable Long treeId) {
-        // TODO: 서비스 로직 연결
+        treeService.removeTree(treeId);
         return ResponseEntity.ok(Map.of("message", "나무가 삭제되었습니다.", "treeId", treeId));
+    }
+
+    private Long getCurrentUserId() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() 
+                    && !"anonymousUser".equals(authentication.getPrincipal())) {
+                // Future authentication parsing
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return 1L; // Mock / default test user ID
     }
 }

@@ -1,11 +1,14 @@
 package com.readforest.readforest.controller.tree;
 
+import com.readforest.readforest.dto.ReadingRecordRequestDto;
+import com.readforest.readforest.dto.ReadingRecordResponseDto;
+import com.readforest.readforest.service.ReadingRecordService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 독서 기록 컨트롤러.
@@ -18,6 +21,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReadingRecordController {
 
+    private final ReadingRecordService readingRecordService;
+
     /**
      * 읽은 페이지 수 기록 추가.
      *
@@ -25,12 +30,15 @@ public class ReadingRecordController {
      * 기록이 추가되면 Service 단에서 이벤트를 발행하여 나무 게이지가 갱신된다.</p>
      *
      * @param treeId 독서 기록을 추가할 나무의 고유 식별자
+     * @param request 독서 기록 추가 요청 DTO
      * @return 추가된 독서 기록 정보를 담은 응답
      */
     @PostMapping
-    public ResponseEntity<?> addReadingRecord(@PathVariable Long treeId) {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Map.of("message", "독서 기록이 추가되었습니다.", "treeId", treeId));
+    public ResponseEntity<ReadingRecordResponseDto.Detail> addReadingRecord(
+            @PathVariable Long treeId,
+            @Valid @RequestBody ReadingRecordRequestDto.Create request) {
+        ReadingRecordResponseDto.Detail response = readingRecordService.addRecord(treeId, request.getCurrentPage());
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -42,8 +50,8 @@ public class ReadingRecordController {
      * @return 독서 기록 목록을 담은 응답
      */
     @GetMapping
-    public ResponseEntity<?> getReadingRecords(@PathVariable Long treeId) {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Map.of("treeId", treeId, "records", List.of()));
+    public ResponseEntity<List<ReadingRecordResponseDto.Detail>> getReadingRecords(@PathVariable Long treeId) {
+        List<ReadingRecordResponseDto.Detail> response = readingRecordService.getRecordsByTree(treeId);
+        return ResponseEntity.ok(response);
     }
 }

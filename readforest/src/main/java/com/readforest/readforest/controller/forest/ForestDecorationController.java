@@ -1,10 +1,14 @@
 package com.readforest.readforest.controller.forest;
 
+import com.readforest.readforest.dto.DecorationRequestDto;
+import com.readforest.readforest.dto.DecorationResponseDto;
+import com.readforest.readforest.service.ForestDecorationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Collections;
 
 /**
  * 숲 꾸미기 컨트롤러.
@@ -17,14 +21,32 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class ForestDecorationController {
 
+    private final ForestDecorationService forestDecorationService;
+
     /**
      * 숲 꾸미기 아이템을 배치하거나 해제한다.
      *
+     * @param request 숲에 배치할 아이템들의 정보 목록 DTO
      * @return 업데이트된 꾸미기 배치 결과
      */
     @PutMapping
-    public ResponseEntity<?> updateDecorations() {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Collections.emptyMap());
+    public ResponseEntity<DecorationResponseDto> updateDecorations(
+            @Valid @RequestBody DecorationRequestDto request) {
+        Long userId = getCurrentUserId();
+        DecorationResponseDto response = forestDecorationService.updateDecorations(userId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    private Long getCurrentUserId() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() 
+                    && !"anonymousUser".equals(authentication.getPrincipal())) {
+                // Future JWT / Authentication integration
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return 1L; // Fallback to test user ID 1L
     }
 }

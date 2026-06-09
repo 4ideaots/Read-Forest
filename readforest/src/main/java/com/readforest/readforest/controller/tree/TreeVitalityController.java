@@ -1,10 +1,10 @@
 package com.readforest.readforest.controller.tree;
 
+import com.readforest.readforest.dto.TreeVitalityResponseDto;
+import com.readforest.readforest.service.TreeVitalityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 /**
  * 나무 생명력 상태 컨트롤러.
@@ -18,6 +18,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TreeVitalityController {
 
+    private final TreeVitalityService treeVitalityService;
+
     /**
      * 나무 생명력 상태 조회.
      *
@@ -27,8 +29,8 @@ public class TreeVitalityController {
      * @return 나무 생명력 상태 정보를 담은 응답
      */
     @GetMapping
-    public ResponseEntity<?> getVitality(@PathVariable Long treeId) {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Map.of("treeId", treeId, "vitality", "HEALTHY"));
+    public ResponseEntity<TreeVitalityResponseDto> getVitality(@PathVariable Long treeId) {
+        TreeVitalityResponseDto response = treeVitalityService.getTreeVitality(treeId);
+        return ResponseEntity.ok(response);
     }
 }
