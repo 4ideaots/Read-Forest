@@ -1,4 +1,4 @@
-package com.example.demo.dto;
+package com.readforest.readforest.dto;
 
 import lombok.*;
 import java.time.LocalDateTime;

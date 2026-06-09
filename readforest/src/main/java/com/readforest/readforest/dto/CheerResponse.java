@@ -1,4 +1,4 @@
-package com.example.com.demo.dto;
+package com.readforest.readforest.dto;
 
 import lombok.*;
 

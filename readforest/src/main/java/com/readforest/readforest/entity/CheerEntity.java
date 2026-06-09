@@ -1,8 +1,9 @@
-package com.example.com.demo.entity;
+package com.readforest.readforest.entity;
+
 
 import jakarta.persistence.*;
 import lombok.*;
-<0xA0>import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 

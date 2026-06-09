@@ -1,7 +1,7 @@
-package com.example.demo.repository;
+package com.readforest.readforest.repository;
 
-import com.example.demo.entity.FollowEntity;
-import orgscript org.springframework.data.jpa.repository.JpaRepository;
+import com.readforest.readforest.entity.FollowEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;

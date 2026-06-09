@@ -3,9 +3,11 @@ package com.readforest.readforest.controller.gamification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.readforest.readforest.dto.RewardClaimResponse;
+import com.readforest.readforest.service.RewardService;
 
 import java.util.Collections;
-import java.util.Map;
+
 
 /**
  * 보상 컨트롤러.
@@ -17,6 +19,7 @@ import java.util.Map;
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class RewardController {
+    private final RewardService rewardService;
 
     /**
      * 퀘스트 달성 보상을 수령한다.
@@ -25,9 +28,11 @@ public class RewardController {
      * @return 보상 수령 결과
      */
     @PostMapping("/quests/{questId}/rewards/claim")
-    public ResponseEntity<?> claimReward(@PathVariable Long questId) {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Map.of("questId", questId, "claimed", true));
+    public ResponseEntity<?> claimReward(
+            @PathVariable Long questId,
+            @RequestHeader("X-User-Id") Long userId) {
+        rewardService.claimReward(userId, questId);
+        return ResponseEntity.ok(new RewardClaimResponse(questId, "보상 수령에 성공했습니다!"));
     }
 
     /**
@@ -36,8 +41,7 @@ public class RewardController {
      * @return 사용자의 전체 보상 수령 내역 목록
      */
     @GetMapping("/rewards/history")
-    public ResponseEntity<?> getRewardHistory() {
-        // TODO: 서비스 로직 연결
+    public ResponseEntity<?> getRewardHistory(@RequestHeader("X-User-Id") Long userId) {
         return ResponseEntity.ok(Collections.emptyList());
     }
 }

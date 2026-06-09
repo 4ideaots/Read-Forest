@@ -3,6 +3,7 @@ package com.readforest.readforest.controller.gamification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.readforest.readforest.service.QuestService;
 
 import java.util.Collections;
 import java.util.Map;
@@ -17,6 +18,7 @@ import java.util.Map;
 @RequestMapping("/api/quests")
 @RequiredArgsConstructor
 public class QuestController {
+    private final QuestService questService;
 
     /**
      * 내 퀘스트 목록을 조회한다.
@@ -24,9 +26,9 @@ public class QuestController {
      * @return 현재 사용자에게 할당된 퀘스트 목록
      */
     @GetMapping
-    public ResponseEntity<?> getMyQuests() {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Collections.emptyList());
+    public ResponseEntity<?> getMyQuests(@RequestHeader("X-User-Id") Long userId) {
+    return ResponseEntity.ok(questService.getMyQuests(userId));
+
     }
 
     /**
@@ -36,8 +38,10 @@ public class QuestController {
      * @return 해당 퀘스트의 상세 정보와 현재 진행도
      */
     @GetMapping("/{questId}")
-    public ResponseEntity<?> getQuestDetail(@PathVariable Long questId) {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Map.of("questId", questId));
+    public ResponseEntity<?> getQuestDetail(
+        @PathVariable Long questId,
+        @RequestHeader("X-User-Id") Long userId) {
+    return ResponseEntity.ok(questService.getMyQuests(userId));
+
     }
 }
