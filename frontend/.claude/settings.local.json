@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Skill(run)",
+      "Read(//tmp/**)",
+      "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless --disable-gpu --window-size=1600,1000 --hide-scrollbars --virtual-time-budget=6000 --screenshot=/tmp/garden.png http://localhost:5199/)",
+      "Bash(sips -c 600 900 --cropOffset 200 350 garden.png --out garden_center.png)",
+      "Bash(sips -z 1200 1800 garden_center.png --out garden_center_big.png)",
+      "Bash(sips -c 500 600 --cropOffset 400 700 garden.png --out garden_pine.png)",
+      "Bash(sips -z 1000 1200 garden_pine.png --out garden_pine_big.png)",
+      "Bash(npx tsc *)",
+      "Bash(npx vite *)",
+      "Bash(./gradlew compileJava --console=plain)",
+      "Bash(echo \"===EXIT $?===\")",
+      "Bash(latexmk -pdf -pdflatex=\"pdflatex -interaction=nonstopmode -halt-on-error\" main.tex)",
+      "Bash(echo \"EXIT $?\")",
+      "Bash(pdflatex -interaction=nonstopmode main.tex)",
+      "Bash(echo \"PASS1 EXIT $?\")",
+      "Bash(echo \"PASS2 EXIT $?\")",
+      "Bash(grep -iE '\\\\.\\(png|jpg|jpeg|pdf|gif|webp\\)$')",
+      "Bash(grep -ivE '\\\\.\\(aux|log|out|toc|bbl|blg|fls|fdb_latexmk|synctex|gz\\)$')",
+      "Bash(pdftotext \"레포트 양식 1.pdf\" -)"
+    ]
+  }
+}

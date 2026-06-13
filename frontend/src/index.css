@@ -1,0 +1,403 @@
+@import url('https://fonts.googleapis.com/css2?family=DungGeunMo&family=Press+Start+2P&family=Fredoka:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-primary: #180d05;
+  --bg-secondary: #3b1d07;
+  
+  /* Stardew Wooden Board Palette */
+  --wood-dark: #381a04;
+  --wood-medium: #703a11;
+  --wood-light: #bf773d;
+  --wood-panel: #d58c4f;
+  --wood-inner: #fbf2cc; /* Warm cream container */
+  --wood-inner-hover: #fcf6dc;
+  --gold-border: #f1ab29;
+  --gold-highlight: #ffda68;
+  
+  --primary-emerald: #4d8c2b; /* Farm leaf green */
+  --primary-green: #67b833;
+  --primary-dark: #3c731f;
+  
+  --accent-gold: #f1ab29;
+  --accent-pink: #f78fb3; /* Sakura blossom */
+  --accent-orange: #cf6a17; /* Autumn maple */
+  --accent-blue: #2980b9;
+  --accent-red: #c0392b;
+  
+  --text-primary: #381a04; /* Rich brown for readability on wood/cream */
+  --text-secondary: #5c3514;
+  --text-muted: #8b5d37;
+  --text-light: #fbf2cc;
+  
+  --font-main: 'Fredoka', 'DungGeunMo', sans-serif;
+  --font-pixel: 'DungGeunMo', 'Fredoka', sans-serif;
+  --font-label: 'Press Start 2P', monospace;
+  
+  --transition-retro: all 0.1s steps(3);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: radial-gradient(circle at center, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+  color: var(--text-primary);
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Stardew Valley Wooden Panel Styling */
+.glass-panel {
+  background: var(--wood-panel);
+  border: 4px solid var(--wood-dark);
+  border-radius: 6px;
+  box-shadow: 
+    0 8px 0 rgba(0, 0, 0, 0.4), 
+    inset -4px -4px 0 var(--wood-medium), 
+    inset 4px 4px 0 rgba(255, 255, 255, 0.25);
+  position: relative;
+  transition: var(--transition-retro);
+}
+
+/* Internal Gold Border detailing Stardew style sheets */
+.glass-panel::after {
+  content: '';
+  position: absolute;
+  top: 4px; left: 4px; right: 4px; bottom: 4px;
+  border: 2px solid var(--gold-border);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.glass-panel:hover {
+  background: #db9357;
+}
+
+/* Cream Container for collection records */
+.glass-card {
+  background: var(--wood-inner);
+  border: 3px solid var(--wood-dark);
+  border-radius: 6px;
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.08);
+  padding: 12px;
+  transition: var(--transition-retro);
+  color: var(--text-primary);
+}
+
+.glass-card:hover {
+  background: var(--wood-inner-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 0 var(--wood-dark), inset 2px 2px 0 rgba(0, 0, 0, 0.04);
+}
+
+/* Custom retro scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--wood-dark);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--wood-light);
+  border: 2px solid var(--wood-dark);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-border);
+}
+
+/* Grid & Layout Components */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+.ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: 370px 1fr 370px;
+  grid-template-rows: auto 1fr auto;
+  gap: 20px;
+  padding: 24px;
+  z-index: 10;
+}
+
+.ui-element {
+  pointer-events: auto;
+}
+
+/* Wooden Sign Header */
+.header-panel {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 28px;
+  margin-bottom: 4px;
+}
+
+.header-title-group h1 {
+  font-family: var(--font-pixel);
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #fff;
+  text-shadow: 
+    -2px -2px 0 var(--wood-dark),  
+     2px -2px 0 var(--wood-dark),
+    -2px  2px 0 var(--wood-dark),
+     2px  2px 0 var(--wood-dark),
+     0px  4px 0 var(--wood-dark);
+}
+
+.header-title-group p {
+  font-family: var(--font-pixel);
+  font-size: 0.85rem;
+  color: var(--wood-inner);
+  text-shadow: 1px 1px 0 var(--wood-dark);
+  margin-top: 2px;
+}
+
+/* Left Sidebar (Farmer Journal) */
+.left-sidebar {
+  grid-column: 1;
+  grid-row: 2 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  max-height: 80vh;
+}
+
+/* Right Sidebar (Billboards & pierre's store) */
+.right-sidebar {
+  grid-column: 3;
+  grid-row: 2 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  max-height: 80vh;
+}
+
+/* Center Bottom controls */
+.bottom-control-panel {
+  grid-column: 2;
+  grid-row: 3;
+  justify-self: center;
+  display: flex;
+  gap: 12px;
+  padding: 12px 24px;
+  align-items: center;
+}
+
+.canvas-viewport {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+/* Buttons: Tactile Retro Depress style */
+.btn-primary {
+  background: var(--primary-green);
+  color: #fff;
+  border: 3px solid var(--wood-dark);
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 0 var(--wood-dark);
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+  transition: var(--transition-retro);
+}
+
+.btn-primary:hover {
+  background: #74cc3a;
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--wood-dark);
+}
+
+.btn-primary:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 var(--wood-dark);
+}
+
+.btn-secondary {
+  background: var(--wood-inner);
+  color: var(--text-primary);
+  border: 3px solid var(--wood-dark);
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 0 var(--wood-dark);
+  transition: var(--transition-retro);
+}
+
+.btn-secondary:hover {
+  background: #fff;
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--wood-dark);
+}
+
+.btn-secondary:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 var(--wood-dark);
+}
+
+/* Pixel inputs */
+.input-field {
+  background: var(--wood-inner);
+  border: 3px solid var(--wood-dark);
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: var(--text-primary);
+  font-family: var(--font-pixel);
+  font-size: 0.95rem;
+  outline: none;
+  box-shadow: inset 1px 1px 0 rgba(0,0,0,0.1);
+  transition: var(--transition-retro);
+}
+
+.input-field:focus {
+  border-color: var(--gold-border);
+  background: #fff;
+}
+
+/* Retro Select Elements */
+select.input-field {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23381a04' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 32px;
+}
+
+/* Wood-board style headers inside panels */
+h2, h3, h4 {
+  font-family: var(--font-pixel);
+  color: var(--text-primary);
+}
+
+/* Retro progress bar */
+.pixel-progress-container {
+  width: 100%;
+  height: 16px;
+  background: var(--wood-dark);
+  border: 2px solid var(--wood-dark);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.pixel-progress-fill {
+  height: 100%;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--primary-green),
+    var(--primary-green) 4px,
+    var(--primary-dark) 4px,
+    var(--primary-dark) 8px
+  );
+  border-radius: 2px;
+  transition: width 0.3s steps(5);
+}
+
+.pixel-progress-fill-pink {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--accent-pink),
+    var(--accent-pink) 4px,
+    #e8638f 4px,
+    #e8638f 8px
+  );
+}
+
+/* Modal styling */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.modal-content {
+  width: 500px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 28px;
+}
+
+/* Text highlight animations */
+.glow-gold {
+  color: var(--accent-gold);
+  text-shadow: 1px 1px 0 var(--wood-dark);
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .ui-overlay {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+    overflow-y: auto;
+    pointer-events: auto;
+  }
+  .left-sidebar, .right-sidebar {
+    grid-column: 1;
+    max-height: none;
+  }
+  .bottom-control-panel {
+    grid-column: 1;
+    grid-row: auto;
+    width: 100%;
+    justify-content: center;
+  }
+  body {
+    overflow-y: auto;
+  }
+  .canvas-viewport {
+    position: fixed;
+  }
+}
+
+/* Spinner used by async loaders (e.g. book search) */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
