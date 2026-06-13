@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -53,6 +55,18 @@ public class TreeService {
 
         Tree savedTree = treeRepository.save(tree);
         return TreeResponseDto.Detail.from(savedTree);
+    }
+
+    /**
+     * 특정 사용자가 심은 모든 나무 목록을 조회한다.
+     *
+     * @param userId 사용자 ID
+     * @return 해당 사용자의 나무 상세 목록
+     */
+    public List<TreeResponseDto.Detail> getUserTrees(Long userId) {
+        return treeRepository.findByUserId(userId).stream()
+                .map(TreeResponseDto.Detail::from)
+                .toList();
     }
 
     public TreeResponseDto.Detail getTreeDetail(Long treeId) {

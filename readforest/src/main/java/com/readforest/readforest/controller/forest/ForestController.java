@@ -1,10 +1,13 @@
 package com.readforest.readforest.controller.forest;
 
+import com.readforest.readforest.dto.TreeResponseDto;
+import com.readforest.readforest.service.TreeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 숲 시각화 컨트롤러.
@@ -17,15 +20,23 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class ForestController {
 
+    private final TreeService treeService;
+
     /**
      * 특정 사용자의 숲을 조회한다.
      *
+     * <p>해당 사용자가 심은 나무 목록과 개수를 반환한다.</p>
+     *
      * @param userId 조회할 사용자의 ID
-     * @return 해당 사용자의 숲 시각화 데이터
+     * @return 해당 사용자의 숲 시각화 데이터 (나무 목록 + 그루 수)
      */
     @GetMapping("/{userId}")
     public ResponseEntity<?> getForest(@PathVariable Long userId) {
-        // TODO: 서비스 로직 연결
-        return ResponseEntity.ok(Collections.emptyMap());
+        List<TreeResponseDto.Detail> trees = treeService.getUserTrees(userId);
+        return ResponseEntity.ok(Map.of(
+                "userId", userId,
+                "treeCount", trees.size(),
+                "trees", trees
+        ));
     }
 }

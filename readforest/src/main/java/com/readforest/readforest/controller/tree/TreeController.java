@@ -2,14 +2,14 @@ package com.readforest.readforest.controller.tree;
 
 import com.readforest.readforest.dto.TreeRequestDto;
 import com.readforest.readforest.dto.TreeResponseDto;
+import com.readforest.readforest.security.CurrentUser;
 import com.readforest.readforest.service.TreeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,6 +24,20 @@ import java.util.Map;
 public class TreeController {
 
     private final TreeService treeService;
+    private final CurrentUser currentUser;
+
+    /**
+     * 내 나무 목록 조회.
+     *
+     * <p>현재 로그인한 사용자가 심은 모든 나무를 반환한다.</p>
+     *
+     * @return 나무 목록
+     */
+    @GetMapping
+    public ResponseEntity<List<TreeResponseDto.Detail>> getMyTrees() {
+        Long userId = currentUser.id();
+        return ResponseEntity.ok(treeService.getUserTrees(userId));
+    }
 
     /**
      * 묘목 심기 (나무 생성).
@@ -35,7 +49,7 @@ public class TreeController {
      */
     @PostMapping
     public ResponseEntity<TreeResponseDto.Detail> plantTree(@Valid @RequestBody TreeRequestDto.Plant request) {
-        Long userId = getCurrentUserId();
+        Long userId = currentUser.id();
         TreeResponseDto.Detail response = treeService.plantTree(userId, request.getBookId());
         return ResponseEntity.ok(response);
     }
@@ -66,18 +80,5 @@ public class TreeController {
     public ResponseEntity<?> removeTree(@PathVariable Long treeId) {
         treeService.removeTree(treeId);
         return ResponseEntity.ok(Map.of("message", "나무가 삭제되었습니다.", "treeId", treeId));
-    }
-
-    private Long getCurrentUserId() {
-        try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.isAuthenticated() 
-                    && !"anonymousUser".equals(authentication.getPrincipal())) {
-                // Future authentication parsing
-            }
-        } catch (Exception e) {
-            // ignore
-        }
-        return 1L; // Mock / default test user ID
     }
 }
