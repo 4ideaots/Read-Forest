@@ -22,6 +22,31 @@ const MOCK_CATALOG = [
   { title: '트렌드 코리아 2026', author: '김난도', genre: 'business' as Genre, pages: 420 }
 ];
 
+// Kakao book search returns no genre, so we infer one from the title/description.
+const GENRE_KEYWORDS: Record<Exclude<Genre, 'other'>, string[]> = {
+  science: ['it', '컴퓨터', '프로그', '개발', '코딩', '파이썬', '자바', '알고리즘', '데이터', '과학', '수학', '물리', '화학', '공학', 'ai', '인공지능', '네트워크', '클라우드'],
+  business: ['경제', '경영', '투자', '주식', '부동산', '재테크', '마케팅', '비즈니스', '자기계발', '성공', '습관', '돈', '창업', '리더십'],
+  humanities: ['역사', '철학', '인문', '심리', '사회', '문화', '예술', '종교', '정치', '고전', '신화'],
+  novel: ['소설', '시집', '에세이', '수필', '문학', '로맨스', '판타지', '추리', '시인', '동화']
+};
+
+// Editable default page counts per genre (Kakao API does not provide page counts).
+const GENRE_DEFAULT_PAGES: Record<Genre, number> = {
+  novel: 320,
+  science: 450,
+  humanities: 480,
+  business: 380,
+  other: 300
+};
+
+const inferGenre = (text: string): Genre => {
+  const t = text.toLowerCase();
+  for (const genre of ['science', 'business', 'humanities', 'novel'] as const) {
+    if (GENRE_KEYWORDS[genre].some((kw) => t.includes(kw))) return genre;
+  }
+  return 'other';
+};
+
 export const BookSearchModal: React.FC<BookSearchModalProps> = ({ onClose }) => {
   const { addBook } = useApp();
   const { isAuthed } = useAuth();
@@ -89,13 +114,16 @@ export const BookSearchModal: React.FC<BookSearchModalProps> = ({ onClose }) => 
     onClose();
   };
 
-  // A real search result has no genre/page count, so prefill the manual form
-  // and let the user confirm those before planting.
+  // A real search result has no genre/page count, so we infer the genre from the
+  // title/description and fill an editable default page count.
   const handleSelectApiBook = (book: ApiBook) => {
     playClick();
     setTitle(book.title);
     setAuthor(book.author || '');
     setCoverUrl(book.coverImageUrl || undefined);
+    const guessed = inferGenre(`${book.title} ${book.contents || ''} ${book.publisher || ''}`);
+    setGenre(guessed);
+    setTotalPages(GENRE_DEFAULT_PAGES[guessed]);
   };
 
   const handleManualSubmit = (e: React.FormEvent) => {
