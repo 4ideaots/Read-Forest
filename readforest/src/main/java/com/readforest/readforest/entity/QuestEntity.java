@@ -26,6 +26,15 @@ public class QuestEntity {
 
     private int targetValue;     // 달성 목표 수치 (예: 10)
 
+    /** 진행도 판정 기준 (pages_today / log_progress / streak / complete_book). */
+    private String targetType;
+
+    /** 보상 포인트(골드). */
+    private int rewardPoints;
+
+    /** 보상 소품 타입 (없으면 null). */
+    private String rewardDecorationType;
+
     public enum QuestType {
         DAILY, WEEKLY, CHALLENGE
     }

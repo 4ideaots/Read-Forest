@@ -69,6 +69,7 @@ export interface Quest {
   rewardClaimed: boolean;
   rewardPoints: number;
   rewardDecorationType?: DecorationType;
+  backendQuestId?: number; // backend QuestEntity id (when quests are backend-driven)
 }
 
 export interface Badge {
@@ -98,4 +99,6 @@ export interface MockForest {
   level: number;
   isPopular: boolean;
   trees: { type: TreeType; growth: number; vitality: number; x: number; z: number }[];
+  ownerUserId?: number; // backend user id for real village forests (absent for sample mocks)
+  cheerCount?: number;
 }

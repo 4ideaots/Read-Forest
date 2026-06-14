@@ -6,7 +6,8 @@ import { QuestBoard } from './components/QuestBoard';
 import { ForestCanvas } from './components/ForestCanvas';
 import { BookSearchModal } from './components/BookSearchModal';
 import { AuthModal } from './components/AuthModal';
-import { Sun, Moon, CloudRain, CloudSnow, RefreshCw, HelpCircle, Trees, LogIn, LogOut } from 'lucide-react';
+import { ProfileModal } from './components/ProfileModal';
+import { Sun, Moon, CloudRain, CloudSnow, RefreshCw, HelpCircle, Trees, LogIn, LogOut, Settings } from 'lucide-react';
 import { playClick } from './utils/audio';
 
 const AppContent: React.FC = () => {
@@ -20,12 +21,16 @@ const AppContent: React.FC = () => {
     notice,
     dismissNotice,
     autoEnv,
-    setAutoEnv
+    setAutoEnv,
+    socialForests,
+    viewingSocialForest,
+    setViewingSocialForest
   } = useApp();
 
   const { isAuthed, nickname, username, logout } = useAuth();
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(true);
 
   // Auto-dismiss the toast after a few seconds.
@@ -34,6 +39,18 @@ const AppContent: React.FC = () => {
     const id = setTimeout(dismissNotice, 5000);
     return () => clearTimeout(id);
   }, [notice, dismissNotice]);
+
+  // Logged-out visitors don't see their own garden — instead the canvas
+  // showcases the village's beautiful forests. On login, we return to the
+  // user's own garden.
+  useEffect(() => {
+    if (!isAuthed) {
+      setViewingSocialForest(socialForests.find((f) => f.isPopular) || socialForests[0] || null);
+    } else {
+      setViewingSocialForest(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthed]);
 
   // Helper stats
   const totalTrees = books.length;
@@ -196,6 +213,14 @@ const AppContent: React.FC = () => {
                   🌱 {nickname || username}
                 </span>
                 <button
+                  onClick={() => { playClick(); setProfileModalOpen(true); }}
+                  className="btn-secondary"
+                  style={{ padding: '8px 10px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700, gap: '4px' }}
+                  title="프로필 설정"
+                >
+                  <Settings size={14} />
+                </button>
+                <button
                   onClick={() => { playClick(); logout(); }}
                   className="btn-secondary"
                   style={{ padding: '8px 12px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700, gap: '4px' }}
@@ -219,45 +244,112 @@ const AppContent: React.FC = () => {
           </div>
         </header>
 
-        {/* Sidebar Left: Books & Profiles */}
-        <Sidebar onOpenSearch={() => setSearchModalOpen(true)} />
+        {/* The personal garden UI (own books, quests, stats) is shown only when
+            logged in. Logged-out visitors get the village showcase below. */}
+        {isAuthed && (
+          <>
+            {/* Sidebar Left: Books & Profiles */}
+            <Sidebar onOpenSearch={() => setSearchModalOpen(true)} />
 
-        {/* QuestBoard Right: Quests & Achievements */}
-        <QuestBoard />
+            {/* QuestBoard Right: Quests & Achievements */}
+            <QuestBoard />
 
-        {/* Bottom Panel: Scene Statistics & Settings */}
-        <div className="bottom-control-panel glass-panel ui-element">
-          <div style={{ display: 'flex', gap: '20px', fontSize: '0.8rem', color: 'var(--text-light)', textShadow: '1px 1px 0 var(--wood-dark)' }}>
-            <div>총 나무: <strong style={{ color: 'var(--gold-highlight)' }}>{totalTrees}</strong>그루</div>
-            <div>완독 나무: <strong style={{ color: 'var(--accent-pink)' }}>{completedTrees}</strong>그루</div>
-            <div>성장 중: <strong style={{ color: 'var(--primary-green)' }}>{activeTrees}</strong>그루</div>
-            <div>배치 소품: <strong style={{ color: 'var(--gold-border)' }}>{decorations.length}</strong>개</div>
+            {/* Bottom Panel: Scene Statistics & Settings */}
+            <div className="bottom-control-panel glass-panel ui-element">
+              <div style={{ display: 'flex', gap: '20px', fontSize: '0.8rem', color: 'var(--text-light)', textShadow: '1px 1px 0 var(--wood-dark)' }}>
+                <div>총 나무: <strong style={{ color: 'var(--gold-highlight)' }}>{totalTrees}</strong>그루</div>
+                <div>완독 나무: <strong style={{ color: 'var(--accent-pink)' }}>{completedTrees}</strong>그루</div>
+                <div>성장 중: <strong style={{ color: 'var(--primary-green)' }}>{activeTrees}</strong>그루</div>
+                <div>배치 소품: <strong style={{ color: 'var(--gold-border)' }}>{decorations.length}</strong>개</div>
+              </div>
+
+              <div style={{ width: '2px', height: '18px', background: 'var(--wood-dark)' }} />
+
+              <button
+                onClick={() => { playClick(); setShowTutorial(!showTutorial); }}
+                className="btn-secondary"
+                style={{ padding: '6px 12px', fontSize: '0.75rem', borderRadius: '6px', gap: '4px' }}
+              >
+                <HelpCircle size={13} />
+                <span>가이드 {showTutorial ? '닫기' : '보기'}</span>
+              </button>
+
+              <button
+                onClick={() => { playClick(); handleResetData(); }}
+                className="btn-secondary"
+                style={{ padding: '6px 12px', fontSize: '0.75rem', borderRadius: '6px', gap: '4px', color: '#c0392b' }}
+              >
+                <RefreshCw size={13} />
+                <span>초기화</span>
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Village showcase (logged-out landing): browse the town's forests */}
+        {!isAuthed && (
+          <div
+            className="glass-panel ui-element"
+            style={{
+              position: 'absolute',
+              bottom: '24px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 90,
+              width: '560px',
+              maxWidth: '92vw',
+              padding: '18px 22px',
+              background: 'var(--wood-panel)',
+              border: '4px solid var(--wood-dark)',
+              borderRadius: '10px',
+              color: '#fff',
+              textAlign: 'center'
+            }}
+          >
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, textShadow: '2px 2px 0 var(--wood-dark)', marginBottom: '4px' }}>
+              🌳 펠리칸 타운에 오신 것을 환영해요
+            </h2>
+            <p style={{ fontSize: '0.78rem', color: 'var(--wood-inner)', textShadow: '1px 1px 0 var(--wood-dark)', marginBottom: '12px' }}>
+              마을의 아름다운 숲들을 둘러보세요. 로그인하면 <strong style={{ color: 'var(--gold-highlight)' }}>나만의 정원</strong>을 시작할 수 있어요.
+            </p>
+
+            <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '14px' }}>
+              {socialForests.map((forest) => {
+                const active = viewingSocialForest?.id === forest.id;
+                return (
+                  <button
+                    key={forest.id}
+                    onClick={() => { playClick(); setViewingSocialForest(forest); }}
+                    className="btn-secondary"
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '0.72rem',
+                      borderRadius: '6px',
+                      fontWeight: 700,
+                      background: active ? 'var(--primary-green)' : undefined,
+                      color: active ? '#fff' : undefined
+                    }}
+                  >
+                    🌲 {forest.userName}의 숲{forest.isPopular ? ' ⭐' : ''}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => { playClick(); setAuthModalOpen(true); }}
+              className="btn-primary"
+              style={{ padding: '10px 20px', fontSize: '0.85rem', fontWeight: 700, justifyContent: 'center', gap: '6px', margin: '0 auto' }}
+            >
+              <LogIn size={16} />
+              로그인하고 내 정원 시작하기
+            </button>
           </div>
-
-          <div style={{ width: '2px', height: '18px', background: 'var(--wood-dark)' }} />
-
-          <button 
-            onClick={() => { playClick(); setShowTutorial(!showTutorial); }}
-            className="btn-secondary"
-            style={{ padding: '6px 12px', fontSize: '0.75rem', borderRadius: '6px', gap: '4px' }}
-          >
-            <HelpCircle size={13} />
-            <span>가이드 {showTutorial ? '닫기' : '보기'}</span>
-          </button>
-
-          <button 
-            onClick={() => { playClick(); handleResetData(); }}
-            className="btn-secondary"
-            style={{ padding: '6px 12px', fontSize: '0.75rem', borderRadius: '6px', gap: '4px', color: '#c0392b' }}
-          >
-            <RefreshCw size={13} />
-            <span>초기화</span>
-          </button>
-        </div>
+        )}
       </div>
 
-      {/* Tutorial Overlay */}
-      {showTutorial && (
+      {/* Tutorial Overlay (own-garden guide; logged-in only) */}
+      {isAuthed && showTutorial && (
         <div 
           className="glass-panel ui-element" 
           style={{
@@ -307,6 +399,11 @@ const AppContent: React.FC = () => {
       {/* Login / Signup Modal */}
       {authModalOpen && (
         <AuthModal onClose={() => setAuthModalOpen(false)} />
+      )}
+
+      {/* Profile / Settings Modal */}
+      {profileModalOpen && (
+        <ProfileModal onClose={() => setProfileModalOpen(false)} />
       )}
 
       {/* Toast notification (offline rewards, watering, etc.) */}

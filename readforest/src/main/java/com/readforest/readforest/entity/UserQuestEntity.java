@@ -27,6 +27,9 @@ public class UserQuestEntity {
 
     private int progress;  // 현재 진행도 (예: 몇 페이지 읽었는지)
 
+    /** 현재 진행 주기 키 (일일: yyyy-MM-dd, 주간: yyyy-'W'ww). 바뀌면 진행도 리셋. */
+    private String periodKey;
+
     @Enumerated(EnumType.STRING)
     private QuestStatus status; // IN_PROGRESS, COMPLETED, REWARD_CLAIMED
 

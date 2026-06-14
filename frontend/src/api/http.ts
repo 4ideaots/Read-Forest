@@ -55,6 +55,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   if (auth) {
     const token = getAccessToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    // Some endpoints (guestbook, cheer) identify the actor via an X-User-Id header.
+    const uid = localStorage.getItem('rf_userId');
+    if (uid) headers['X-User-Id'] = uid;
   }
 
   const res = await fetch(`${BASE}${path}`, {

@@ -1,9 +1,31 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { Book, Tree, User, Quest, Decoration, TreeType, Genre, DecorationType, MockForest, BiomeType } from '../types';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import type { Book, Tree, User, Quest, Decoration, TreeType, Genre, DecorationType, MockForest, BiomeType, QuestTargetType } from '../types';
 import confetti from 'canvas-confetti';
 import { playPop, playCoin, playPlant, playLevelUp, playGrow } from '../utils/audio';
 import { isAuthenticated } from '../api/token';
 import * as treeApi from '../api/trees';
+import * as gardenApi from '../api/garden';
+import * as socialApi from '../api/social';
+import * as inventoryApi from '../api/inventory';
+import * as decorApi from '../api/forestDecor';
+import * as questApi from '../api/quests';
+import { useAuth } from './AuthContext';
+
+// Map a backend quest to the frontend Quest shape (weekly keeps its 'weekly-1' id
+// so the UI badge logic still works).
+const mapBackendQuest = (q: questApi.ApiQuest): Quest => ({
+  id: q.questType === 'WEEKLY' ? 'weekly-1' : `daily-${q.questId}`,
+  backendQuestId: q.questId,
+  title: q.title,
+  description: q.description,
+  targetType: q.targetType as QuestTargetType,
+  targetValue: q.targetValue,
+  currentValue: q.progress,
+  completed: q.status !== 'IN_PROGRESS',
+  rewardClaimed: q.status === 'REWARD_CLAIMED',
+  rewardPoints: q.rewardPoints,
+  rewardDecorationType: (q.rewardDecorationType || undefined) as DecorationType | undefined
+});
 
 // Visual growth stages mirror the renderer's sprite tiers so the celebration
 // fires at the exact moment the tree visibly changes shape.
@@ -374,13 +396,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [notice, setNotice] = useState<string | null>(null);
   const [autoEnv, setAutoEnv] = useState<boolean>(() => localStorage.getItem('rf_autoEnv') === '1');
   const dismissNotice = () => setNotice(null);
+  const { isAuthed } = useAuth();
   const [wateredForests, setWateredForests] = useState<Set<string>>(new Set());
+  const [socialForests, setSocialForests] = useState<MockForest[]>(MOCK_SOCIAL_FORESTS);
   const [biome, setBiome] = useState<BiomeType>(() => {
     const saved = localStorage.getItem('rf_biome');
     return saved ? (saved as BiomeType) : 'spring';
   });
 
-  // Synchronize storage
+  // Synchronize storage (local cache / offline fallback)
   useEffect(() => {
     localStorage.setItem('rf_books', JSON.stringify(books));
     localStorage.setItem('rf_trees', JSON.stringify(trees));
@@ -389,6 +413,196 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('rf_quests', JSON.stringify(quests));
     localStorage.setItem('rf_biome', biome);
   }, [books, trees, decorations, user, quests, biome]);
+
+  // --- Backend persistence of the FULL garden state (per user) --------------
+  // The whole garden (books, trees w/ position & type, decorations, stats,
+  // quests, biome) is serialized to one JSON document and saved to the DB, so
+  // every piece of garden/book data survives across sessions and devices.
+  const hydratingRef = useRef(false);
+  const gardenLoadedRef = useRef(false);
+  // Maps a frontend decoration type → backend Item id (loaded from inventory).
+  const itemIdByTypeRef = useRef<Record<string, number>>({});
+
+  // Quests are owned by the backend; everything else is persisted as a blob.
+  const serializeGarden = (): string =>
+    JSON.stringify({ books, trees, decorations, user, biome });
+
+  // On login, load this user's garden from the DB and hydrate the UI. If the
+  // account has no saved garden yet, push the current local state up as a seed.
+  useEffect(() => {
+    if (!isAuthed) {
+      gardenLoadedRef.current = false;
+      return;
+    }
+    if (gardenLoadedRef.current) return;
+    gardenLoadedRef.current = true;
+    void (async () => {
+      try {
+        const res = await gardenApi.getGardenState();
+        if (res.state) {
+          const s = JSON.parse(res.state);
+          hydratingRef.current = true;
+          if (s.books) setBooks(s.books);
+          if (s.trees) setTrees(s.trees);
+          if (s.decorations) setDecorations(s.decorations);
+          if (s.user) setUser(s.user);
+          if (s.biome) setBiome(s.biome);
+          setNotice('🌐 저장된 정원을 불러왔어요.');
+        } else {
+          // First login on this account — seed the DB with current state.
+          await gardenApi.saveGardenState(serializeGarden());
+        }
+      } catch {
+        // backend unreachable — fall back to local state
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthed]);
+
+  // Debounced save of the full garden to the DB on any change (when logged in).
+  useEffect(() => {
+    if (!isAuthed) return;
+    // Skip the save triggered by hydration itself.
+    if (hydratingRef.current) {
+      hydratingRef.current = false;
+      return;
+    }
+    const handle = setTimeout(() => {
+      void gardenApi.saveGardenState(serializeGarden()).catch(() => {});
+    }, 1200);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [books, trees, decorations, user, biome, isAuthed]);
+
+  // Load backend-authoritative quests on login (replaces the local quest set).
+  useEffect(() => {
+    if (!isAuthed) return;
+    void (async () => {
+      try {
+        const qs = await questApi.getQuests();
+        if (qs.length > 0) setQuests(qs.map(mapBackendQuest));
+      } catch {
+        // backend unreachable — keep locally generated quests
+      }
+    })();
+  }, [isAuthed]);
+
+  // Refetch backend quests into state (after a progress report or claim).
+  const refreshQuests = async () => {
+    try {
+      const qs = await questApi.getQuests();
+      if (qs.length > 0) setQuests(qs.map(mapBackendQuest));
+    } catch {
+      // ignore
+    }
+  };
+
+  // Report reading actions toward backend quests, then refresh.
+  const reportQuestEvents = async (events: { targetType: string; amount: number; absolute?: boolean }[]) => {
+    try {
+      for (const e of events) {
+        await questApi.reportProgress(e.targetType, e.amount, e.absolute ?? false);
+      }
+      await refreshQuests();
+    } catch {
+      // ignore — quest progress is best-effort
+    }
+  };
+
+  // On logout, clear the in-memory garden so leftover data can't leak into the
+  // next account that logs in on this device. The real garden stays safe in the
+  // DB and is reloaded on the next login.
+  const prevAuthedRef = useRef(isAuthed);
+  useEffect(() => {
+    if (prevAuthedRef.current && !isAuthed) {
+      setBooks(INITIAL_BOOKS);
+      setTrees(INITIAL_TREES);
+      setDecorations(INITIAL_DECORATIONS);
+      setUser(INITIAL_USER);
+      const today = new Date().toISOString().split('T')[0];
+      setQuests([...makeDailyQuests(today), makeWeeklyQuest()]);
+      setBiome('spring');
+    }
+    prevAuthedRef.current = isAuthed;
+  }, [isAuthed]);
+
+  // Load the real village (other users' gardens) when logged in; fall back to
+  // the sample forests otherwise (e.g. the logged-out showcase).
+  useEffect(() => {
+    if (!isAuthed) {
+      setSocialForests(MOCK_SOCIAL_FORESTS);
+      return;
+    }
+    void (async () => {
+      try {
+        const village = await socialApi.getVillage();
+        const mapped: MockForest[] = village.map((v) => {
+          let trees: MockForest['trees'] = [];
+          let level = 1;
+          try {
+            const s = JSON.parse(v.state);
+            trees = (s.trees || []).map((t: { type: TreeType; growth: number; vitality: number; x: number; z: number }) => ({
+              type: t.type, growth: t.growth, vitality: t.vitality, x: t.x, z: t.z
+            }));
+            level = s.user?.level ?? 1;
+          } catch {
+            // malformed saved state — show as an empty forest
+          }
+          return {
+            id: `user-${v.userId}`,
+            userName: v.nickname,
+            userTitle: v.title || '정원사',
+            treeCount: trees.length,
+            level,
+            isPopular: (v.cheerCount ?? 0) >= 5 || trees.length >= 5,
+            trees,
+            ownerUserId: v.userId,
+            cheerCount: v.cheerCount
+          };
+        });
+        if (mapped.length > 0) setSocialForests(mapped);
+      } catch {
+        // backend unreachable — keep the sample forests
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthed]);
+
+  // On login, load the inventory to map decoration types → backend Item ids.
+  useEffect(() => {
+    if (!isAuthed) {
+      itemIdByTypeRef.current = {};
+      return;
+    }
+    void (async () => {
+      try {
+        const items = await inventoryApi.getInventory();
+        const map: Record<string, number> = {};
+        items.forEach((i) => { map[i.itemName] = i.itemId; });
+        itemIdByTypeRef.current = map;
+      } catch {
+        // ignore — decoration mirroring will simply be skipped
+      }
+    })();
+  }, [isAuthed]);
+
+  // Debounced relational mirror of decoration placements (Item-based rows).
+  useEffect(() => {
+    if (!isAuthed) return;
+    const map = itemIdByTypeRef.current;
+    if (Object.keys(map).length === 0) return; // inventory not loaded yet
+    const handle = setTimeout(() => {
+      const placements = decorations
+        .map((d) => {
+          const itemId = map[d.type];
+          return itemId ? { itemId, positionX: d.x, positionY: d.z, isPlaced: true } : null;
+        })
+        .filter((p): p is decorApi.DecorPlacement => p !== null);
+      void decorApi.updateDecorations(placements).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [decorations, isAuthed]);
 
   // Vitality Degradation Check on mount
   useEffect(() => {
@@ -567,6 +781,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { x: bestX, z: bestZ };
   };
 
+  // Best-effort backend mirror of a single book: persist the book, plant a
+  // tree, replay current progress, and store the returned ids locally. Returns
+  // true if a new tree was actually planted on the backend.
+  const syncBookToBackend = async (book: Book): Promise<boolean> => {
+    if (!isAuthenticated() || book.backendTreeId) return false;
+    try {
+      const created = await treeApi.createBook({
+        title: book.title,
+        author: book.author,
+        genre: book.genre,
+        totalPage: book.totalPages,
+        coverImageUrl: book.coverUrl
+      });
+      const tree = await treeApi.plantTree(created.id);
+      if (book.currentPage > 0) {
+        await treeApi.addReadingRecord(tree.id, Math.min(book.totalPages, book.currentPage)).catch(() => {});
+      }
+      setBooks((prev) => prev.map((b) => (b.id === book.id ? { ...b, backendBookId: created.id, backendTreeId: tree.id } : b)));
+      return true;
+    } catch {
+      // backend unavailable — local state remains the source of truth
+      return false;
+    }
+  };
+
   // Add Book
   const addBook = (title: string, author: string, genre: Genre, totalPages: number, coverUrl?: string) => {
     const bookId = `book-${Date.now()}`;
@@ -610,31 +849,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBooks((prev) => [newBook, ...prev]);
     setTrees((prev) => [...prev, newTree]);
 
-    // Best-effort backend sync: persist the book and plant a tree, then store
-    // the returned ids on the local book. Failures are ignored (offline-first).
-    if (isAuthenticated()) {
-      void (async () => {
-        try {
-          const created = await treeApi.createBook({ title, author, genre, totalPage: totalPages, coverImageUrl: coverUrl });
-          const tree = await treeApi.plantTree(created.id);
-          setBooks((prev) => prev.map((b) => (b.id === bookId ? { ...b, backendBookId: created.id, backendTreeId: tree.id } : b)));
-        } catch {
-          // backend unavailable — local state remains the source of truth
-        }
-      })();
-    }
+    // Best-effort backend sync (persist book + plant tree, store returned ids).
+    void syncBookToBackend(newBook);
 
     // Play plant sound
     playPlant();
 
-    // Update quest "Add book" or log progress
-    const updatedQuests = quests.map((q) => {
-      if (q.targetType === 'log_progress') {
-        return { ...q, currentValue: q.currentValue + 1 };
-      }
-      return q;
-    });
-    setQuests(checkQuests(updatedQuests));
+    // Quest progress: backend-authoritative when logged in, local otherwise.
+    if (isAuthed) {
+      void reportQuestEvents([{ targetType: 'log_progress', amount: 1 }]);
+    } else {
+      const updatedQuests = quests.map((q) =>
+        q.targetType === 'log_progress' ? { ...q, currentValue: q.currentValue + 1 } : q
+      );
+      setQuests(checkQuests(updatedQuests));
+    }
 
     // XP award
     setUser((prev) => addXP(50, { ...prev, points: prev.points + 10 }));
@@ -768,22 +997,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
 
-    // Update Quests
-    const updatedQuests = quests.map((q) => {
-      let val = q.currentValue;
-      if (q.targetType === 'pages_today') {
-        val += pageDiff;
-      } else if (q.targetType === 'log_progress') {
-        val += 1;
-      } else if (q.targetType === 'streak') {
-        val = newStreak;
-      } else if (q.targetType === 'complete_book' && newProgress === 100 && prevBook.progress < 100) {
-        val += 1;
-      }
-      return { ...q, currentValue: val };
-    });
-
-    setQuests(checkQuests(updatedQuests));
+    // Update Quests — backend-authoritative when logged in, local otherwise.
+    const justCompleted = newProgress === 100 && prevBook.progress < 100;
+    if (isAuthed) {
+      const events: { targetType: string; amount: number; absolute?: boolean }[] = [];
+      if (pageDiff > 0) events.push({ targetType: 'pages_today', amount: pageDiff });
+      events.push({ targetType: 'log_progress', amount: 1 });
+      events.push({ targetType: 'streak', amount: newStreak, absolute: true });
+      if (justCompleted) events.push({ targetType: 'complete_book', amount: 1 });
+      void reportQuestEvents(events);
+    } else {
+      const updatedQuests = quests.map((q) => {
+        let val = q.currentValue;
+        if (q.targetType === 'pages_today') {
+          val += pageDiff;
+        } else if (q.targetType === 'log_progress') {
+          val += 1;
+        } else if (q.targetType === 'streak') {
+          val = newStreak;
+        } else if (q.targetType === 'complete_book' && justCompleted) {
+          val += 1;
+        }
+        return { ...q, currentValue: val };
+      });
+      setQuests(checkQuests(updatedQuests));
+    }
 
     // Award XP
     const xpEarned = pageDiff * 2 + (newProgress === 100 && prevBook.progress < 100 ? 150 : 0);
@@ -826,51 +1064,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (selectedBookId === bookId) setSelectedBookId(null);
   };
 
-  // Claim Quest Reward
-  const claimQuestReward = (questId: string) => {
-    const quest = quests.find((q) => q.id === questId);
-    if (!quest || !quest.completed || quest.rewardClaimed) return;
-
-    setQuests((prev) =>
-      prev.map((q) => (q.id === questId ? { ...q, rewardClaimed: true } : q))
-    );
-
-    // Play coin sound
+  // Grant a quest reward locally (points + optional decoration) with effects.
+  const applyQuestReward = (rewardPoints: number, rewardDecorationType?: DecorationType) => {
     playCoin();
-
-    setUser((prev) => ({
-      ...prev,
-      points: prev.points + quest.rewardPoints
-    }));
-
-    if (quest.rewardDecorationType) {
-      // Auto place decoration at a random free spot on the board
+    setUser((prev) => ({ ...prev, points: prev.points + rewardPoints }));
+    if (rewardDecorationType) {
       const coord = getRandomGridCoord(trees, decorations);
       const newDecor: Decoration = {
         id: `decor-${Date.now()}`,
-        type: quest.rewardDecorationType,
+        type: rewardDecorationType,
         x: coord.x,
         z: coord.z,
         placedAt: new Date().toISOString()
       };
       setDecorations((prev) => [...prev, newDecor]);
-
-      // Pop visual confetti for getting a decor!
-      playCoin();
       (confetti as any)({
-        particleCount: 60,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        scalar: 2.0,
-        shapes: ['emoji'],
-        shapeOptions: {
-          emoji: {
-            value: ['🎁', '🌟', '💖']
-          }
-        }
+        particleCount: 60, angle: 60, spread: 55, origin: { x: 0 }, scalar: 2.0,
+        shapes: ['emoji'], shapeOptions: { emoji: { value: ['🎁', '🌟', '💖'] } }
       });
     }
+  };
+
+  // Claim Quest Reward — backend-authoritative when logged in.
+  const claimQuestReward = (questId: string) => {
+    const quest = quests.find((q) => q.id === questId);
+    if (!quest || !quest.completed || quest.rewardClaimed) return;
+
+    if (isAuthed && quest.backendQuestId != null) {
+      void (async () => {
+        try {
+          const res = await questApi.claimReward(quest.backendQuestId!);
+          applyQuestReward(res.rewardPoints, (res.rewardDecorationType || undefined) as DecorationType | undefined);
+          await refreshQuests();
+        } catch {
+          // claim failed (already claimed / not complete) — ignore
+        }
+      })();
+      return;
+    }
+
+    // Local fallback (offline / logged-out)
+    setQuests((prev) => prev.map((q) => (q.id === questId ? { ...q, rewardClaimed: true } : q)));
+    applyQuestReward(quest.rewardPoints, quest.rewardDecorationType);
   };
 
   // Buy and Place decoration using points
@@ -950,6 +1185,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUser((prev) => ({ ...prev, points: prev.points + 10 }));
     playCoin();
     setNotice(`💧 ${viewingSocialForest.userName} 님의 정원에 물을 주었어요!  +10 G`);
+
+    // Record the cheer on the backend (real village forests only).
+    if (viewingSocialForest.ownerUserId != null) {
+      void socialApi.cheerForest(viewingSocialForest.ownerUserId).catch(() => {});
+    }
   };
 
   // Trigger Revive Quest (for testing / demo purposes)
@@ -969,7 +1209,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         timeOfDay,
         weather,
         selectedBookId,
-        socialForests: MOCK_SOCIAL_FORESTS,
+        socialForests,
         viewingSocialForest,
         addBook,
         updateBookProgress,

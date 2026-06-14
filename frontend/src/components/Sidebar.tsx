@@ -4,6 +4,7 @@ import type { Book, Genre } from '../types';
 import { getBiomeAt, getTreeLabel } from '../utils/biome';
 import { BookOpen, Trash2, Flame, HeartPulse, ChevronDown, ChevronUp, Plus, Award } from 'lucide-react';
 import { playClick } from '../utils/audio';
+import { GuestbookPanel } from './GuestbookPanel';
 
 interface SidebarProps {
   onOpenSearch: () => void;
@@ -130,6 +131,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSearch }) => {
                 내 농장으로
               </button>
             </div>
+
+            {/* Guestbook — real village forests only */}
+            {viewingSocialForest.ownerUserId != null && (
+              <GuestbookPanel
+                ownerUserId={viewingSocialForest.ownerUserId}
+                ownerName={viewingSocialForest.userName}
+              />
+            )}
           </div>
         </div>
       )}

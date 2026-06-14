@@ -24,6 +24,8 @@ public class TestDataInit implements CommandLineRunner {
     private final BookRepository bookRepository;
     private final ItemRepository itemRepository;
     private final InventoryItemRepository inventoryItemRepository;
+    private final com.readforest.readforest.service.DecorationCatalogService decorationCatalogService;
+    private final com.readforest.readforest.service.QuestService questService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -34,6 +36,7 @@ public class TestDataInit implements CommandLineRunner {
         if (userRepository.count() == 0) {
             user = userRepository.save(User.builder()
                     .username("testuser")
+                    .password("seed-user-no-login")
                     .nickname("초록정원사")
                     .profileImageUrl("https://s3.readforest.com/profile.png")
                     .role("ROLE_USER")
@@ -84,6 +87,16 @@ public class TestDataInit implements CommandLineRunner {
                     .build());
             log.info("Added Item to User Inventory");
         }
+
+        // 5. Seed the 13-piece decoration catalog and grant it to every user so
+        //    relational decoration placement (PUT /api/forests/me/decorations) works.
+        decorationCatalogService.seedItems();
+        userRepository.findAll().forEach(decorationCatalogService::grantAllToUser);
+        log.info("Seeded decoration catalog and granted items to all users.");
+
+        // 6. Seed the daily/weekly quest templates (backend-authoritative quests).
+        questService.seedQuests();
+        log.info("Seeded quest templates.");
 
         log.info("Test data initialization completed successfully.");
     }

@@ -22,6 +22,7 @@ public class AccountService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DecorationCatalogService decorationCatalogService;
 
     /**
      * 새로운 사용자를 등록한다.
@@ -43,7 +44,11 @@ public class AccountService {
                 .nickname(request.getNickname())
                 .build();
 
-        return new SignupResponseDto(userRepository.save(user));
+        User saved = userRepository.save(user);
+        // Ensure the catalog exists, then grant it so backend decoration placement works.
+        decorationCatalogService.seedItems();
+        decorationCatalogService.grantAllToUser(saved);
+        return new SignupResponseDto(saved);
     }
 
     /**
