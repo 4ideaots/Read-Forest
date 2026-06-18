@@ -25,11 +25,15 @@ main 머지 ──► Deploy: 테스트 ─► 이미지 빌드/푸시(GHCR) ─
 | `EC2_USER` | `ec2-user` |
 | `EC2_SSH_KEY` | EC2 접속용 **개인키 전체 내용**(.pem 파일 내용) |
 | `EC2_SSH_PORT` | (선택) 기본 22 |
+| `EC2_APP_DIR` | (선택) 리포 절대경로. 미설정 시 `$HOME/Github/Read-Forest`. 다른 곳에 clone 했다면 지정 |
+
+> ⚠️ `EC2_USER` 는 **리포를 clone 한 그 사용자**여야 합니다(예: `ec2-user`). 다른 사용자로 접속하면
+> 홈 디렉터리가 달라 `Read-Forest` 를 못 찾습니다. 경로가 특이하면 `EC2_APP_DIR` 에 절대경로를 넣으세요.
 
 > `GITHUB_TOKEN` 은 자동 제공되며 GHCR 푸시/풀에 사용됩니다. 별도 등록 불필요.
 
 ### B. EC2 사전 상태 (이미 충족되어 있으면 생략)
-- `~/Read-Forest` 에 리포가 clone 되어 있고 `.env` 가 채워져 있을 것
+- `~/Github/Read-Forest` 에 리포가 clone 되어 있고 `.env` 가 채워져 있을 것 (경로가 다르면 `EC2_APP_DIR` 지정)
 - `ec2-user` 가 `docker` 그룹에 속해 sudo 없이 `docker` 사용 가능할 것
 
 ### C. GHCR 패키지 권한
@@ -45,7 +49,7 @@ EC2 의 pull 이 권한 오류로 실패하면 둘 중 하나로 해결:
 ## 롤백
 이미지는 `:latest` 와 `:<git-sha>` 두 태그로 푸시됩니다. 특정 커밋으로 되돌리려면 EC2 에서:
 ```bash
-cd ~/Read-Forest
+cd ~/Github/Read-Forest
 docker compose -f docker-compose.yml -f docker-compose.prod.yml \
   pull && docker tag ghcr.io/4ideaots/readforest-backend:<sha> ghcr.io/4ideaots/readforest-backend:latest
 # 또는 docker-compose.prod.yml 의 태그를 <sha> 로 바꿔 up -d

@@ -91,10 +91,17 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_SSH_PORT || 22 }}
-          envs: GHCR_USER,GHCR_TOKEN
+          envs: GHCR_USER,GHCR_TOKEN,APP_DIR
           script: |
             set -e
-            cd ~/Read-Forest
+            APP_DIR="${APP_DIR:-$HOME/Github/Read-Forest}"
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "리포를 찾을 수 없습니다: $APP_DIR (접속 사용자: $(whoami), HOME: $HOME)"
+              echo "EC2_USER 시크릿이 리포를 clone 한 사용자와 같은지,"
+              echo "또는 EC2_APP_DIR 시크릿에 정확한 절대경로를 넣었는지 확인하세요."
+              exit 1
+            fi
+            cd "$APP_DIR"
             # 추적 파일을 origin/main 에 강제 일치(.env·certbot/ 는 gitignore 라 보존)
             git fetch origin main
             git reset --hard origin/main
@@ -106,3 +113,4 @@ jobs:
         env:
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_DIR: ${{ secrets.EC2_APP_DIR }}
