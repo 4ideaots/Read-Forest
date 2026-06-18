@@ -1,6 +1,9 @@
 # ${DOMAIN} 은 nginx 컨테이너 시작 시 envsubst 가 채워줍니다.
 # $uri, $host 등 nginx 변수는 환경변수가 아니라 그대로 보존됩니다.
 
+# 인증 엔드포인트용 레이트리밋 존 (IP당 초당 5요청). 무차별 대입/도용 완화.
+limit_req_zone $binary_remote_addr zone=auth_limit:10m rate=5r/s;
+
 # ---------- HTTP: ACME 챌린지 + HTTPS 리다이렉트 ----------
 server {
     listen 80;
@@ -51,6 +54,16 @@ server {
     # React SPA: 매칭되는 파일 없으면 index.html
     location / {
         try_files $uri $uri/ /index.html;
+    }
+
+    # 로그인/회원가입은 레이트리밋 적용 (burst 로 정상 사용자 재시도는 허용)
+    location /api/auth/ {
+        limit_req zone=auth_limit burst=10 nodelay;
+        proxy_pass http://$upstream;
+    }
+    location = /api/accounts/signup {
+        limit_req zone=auth_limit burst=5 nodelay;
+        proxy_pass http://$upstream;
     }
 
     # 백엔드 프록시 (변수 사용 → startup 시 DNS 해석 강제 안 함)

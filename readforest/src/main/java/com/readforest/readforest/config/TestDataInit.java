@@ -11,11 +11,20 @@ import com.readforest.readforest.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
+/**
+ * 개발용 더미 데이터 시드. {@code dev} 프로파일에서만 동작한다.
+ * 운영 DB 에 테스트 유저/책/아이템이 들어가는 것을 막는다.
+ * 운영에도 필요한 카탈로그/퀘스트 시드는 {@link CatalogDataInit} 가 담당한다.
+ */
 @Component
+@Profile("dev")
+@Order(2)
 @RequiredArgsConstructor
 @Slf4j
 public class TestDataInit implements CommandLineRunner {
@@ -25,11 +34,10 @@ public class TestDataInit implements CommandLineRunner {
     private final ItemRepository itemRepository;
     private final InventoryItemRepository inventoryItemRepository;
     private final com.readforest.readforest.service.DecorationCatalogService decorationCatalogService;
-    private final com.readforest.readforest.service.QuestService questService;
 
     @Override
     public void run(String... args) throws Exception {
-        log.info("Initializing test data...");
+        log.info("Initializing test data (dev profile)...");
 
         // 1. Create a test user if repository is empty
         User user;
@@ -88,15 +96,9 @@ public class TestDataInit implements CommandLineRunner {
             log.info("Added Item to User Inventory");
         }
 
-        // 5. Seed the 13-piece decoration catalog and grant it to every user so
-        //    relational decoration placement (PUT /api/forests/me/decorations) works.
-        decorationCatalogService.seedItems();
-        userRepository.findAll().forEach(decorationCatalogService::grantAllToUser);
-        log.info("Seeded decoration catalog and granted items to all users.");
-
-        // 6. Seed the daily/weekly quest templates (backend-authoritative quests).
-        questService.seedQuests();
-        log.info("Seeded quest templates.");
+        // 5. Grant the (already-seeded by CatalogDataInit) decoration catalog to the test user
+        //    so relational decoration placement (PUT /api/forests/me/decorations) works in dev.
+        decorationCatalogService.grantAllToUser(user);
 
         log.info("Test data initialization completed successfully.");
     }

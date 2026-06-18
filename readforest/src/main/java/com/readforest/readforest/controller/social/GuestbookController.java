@@ -2,6 +2,7 @@ package com.readforest.readforest.controller.social;
 
 import lombok.RequiredArgsConstructor;
 import com.readforest.readforest.dto.GuestbookRequest;
+import com.readforest.readforest.security.CurrentUser;
 import com.readforest.readforest.service.GuestbookService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class GuestbookController {
     private final GuestbookService guestbookService;
+    private final CurrentUser currentUser;
 
     /**
      * 특정 유저의 숲에 방명록을 작성한다.
@@ -27,9 +29,8 @@ public class GuestbookController {
     @PostMapping("/api/forests/{userId}/guestbook")
     public ResponseEntity<?> writeGuestbook(
             @PathVariable Long userId,
-            @RequestHeader("X-User-Id") Long writerId,
             @RequestBody GuestbookRequest request) {
-        guestbookService.writeGuestbook(userId, writerId, request);
+        guestbookService.writeGuestbook(userId, currentUser.id(), request);
         return ResponseEntity.ok().build();
     }
 
@@ -51,10 +52,8 @@ public class GuestbookController {
      * @return 삭제 처리 결과
      */
     @DeleteMapping("/api/guestbook/{guestbookId}")
-    public ResponseEntity<?> deleteGuestbook(
-            @PathVariable Long guestbookId,
-            @RequestHeader("X-User-Id") Long requestUserId) {
-        guestbookService.deleteGuestbook(guestbookId, requestUserId);
+    public ResponseEntity<?> deleteGuestbook(@PathVariable Long guestbookId) {
+        guestbookService.deleteGuestbook(guestbookId, currentUser.id());
         return ResponseEntity.noContent().build();
     }
 

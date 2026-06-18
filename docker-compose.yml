@@ -11,6 +11,8 @@ services:
       DB_NAME: ${DB_NAME:-readforest}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
+      SPRING_JPA_DDL_AUTO: ${SPRING_JPA_DDL_AUTO:-update}
+      SPRING_JPA_SHOW_SQL: ${SPRING_JPA_SHOW_SQL:-false}
       KAKAO_API_KEY: ${KAKAO_API_KEY}
       # OAuth2: .env 가 비어 있으면 더미값을 넣어 등록 검증만 통과시킨다(로그인 자체는 비활성).
       # 실제 소셜 로그인을 켜려면 .env 에 진짜 키를 채우면 그 값이 우선 적용된다.

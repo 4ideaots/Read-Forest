@@ -1,22 +1,23 @@
 package com.readforest.readforest.controller.social;
 
 import lombok.RequiredArgsConstructor;
+import com.readforest.readforest.security.CurrentUser;
 import com.readforest.readforest.service.FollowService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
-
 /**
  * 팔로우 컨트롤러.
  *
- * <p>유저 간의 팔로우/언팔로우 관계 맺기를 담당한다.</p>
+ * <p>유저 간의 팔로우/언팔로우 관계 맺기를 담당한다.
+ * 행위 주체는 항상 JWT 인증 사용자({@link CurrentUser})에서 가져온다.</p>
  */
 @RestController
 @RequestMapping("/api/follows")
 @RequiredArgsConstructor
 public class FollowController {
     private final FollowService followService;
+    private final CurrentUser currentUser;
 
     /**
      * 대상 유저를 팔로우한다.
@@ -25,8 +26,8 @@ public class FollowController {
      * @return 팔로우 처리 결과
      */
     @PostMapping("/{targetUserId}")
-    public ResponseEntity<?> follow(@RequestHeader("X-User-Id") Long followerId, @PathVariable Long targetUserId) {
-        followService.follow(followerId, targetUserId);
+    public ResponseEntity<?> follow(@PathVariable Long targetUserId) {
+        followService.follow(currentUser.id(), targetUserId);
         return ResponseEntity.ok().build();
     }
 
@@ -37,8 +38,8 @@ public class FollowController {
      * @return 언팔로우 처리 결과
      */
     @DeleteMapping("/{targetUserId}")
-    public ResponseEntity<?> unfollow(@RequestHeader("X-User-Id") Long followerId, @PathVariable Long targetUserId) {
-        followService.unfollow(followerId, targetUserId);
+    public ResponseEntity<?> unfollow(@PathVariable Long targetUserId) {
+        followService.unfollow(currentUser.id(), targetUserId);
         return ResponseEntity.noContent().build();
     }
 
@@ -48,11 +49,9 @@ public class FollowController {
      * @return 팔로워 목록
      */
     @GetMapping("/followers")
-    public ResponseEntity<?> getFollowers(@RequestHeader("X-User-Id") Long userId) {
-        return ResponseEntity.ok(followService.getFollowers(userId));
+    public ResponseEntity<?> getFollowers() {
+        return ResponseEntity.ok(followService.getFollowers(currentUser.id()));
     }
-
-
 
     /**
      * 내가 팔로우하는 유저(팔로잉) 목록을 조회한다.
@@ -60,8 +59,7 @@ public class FollowController {
      * @return 팔로잉 목록
      */
     @GetMapping("/following")
-    public ResponseEntity<?> getFollowing(@RequestHeader("X-User-Id") Long userId) {
-        return ResponseEntity.ok(followService.getFollowing(userId));
-
+    public ResponseEntity<?> getFollowing() {
+        return ResponseEntity.ok(followService.getFollowing(currentUser.id()));
     }
 }

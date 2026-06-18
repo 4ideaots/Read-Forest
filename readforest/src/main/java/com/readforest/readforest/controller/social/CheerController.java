@@ -3,6 +3,7 @@ package com.readforest.readforest.controller.social;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.readforest.readforest.security.CurrentUser;
 import com.readforest.readforest.service.CheerService;
 
 /**
@@ -17,6 +18,7 @@ import com.readforest.readforest.service.CheerService;
 @RequiredArgsConstructor
 public class CheerController {
     private final CheerService cheerService;
+    private final CurrentUser currentUser;
 
     /**
      * 특정 나무에 응원하기(물주기)를 수행한다.
@@ -25,9 +27,8 @@ public class CheerController {
      * @return 응원 처리 결과
      */
     @PostMapping("/{treeId}/cheer")
-    public ResponseEntity<?> cheerTree(
-            @PathVariable Long treeId,
-            @RequestHeader("X-User-Id") Long userId) {
+    public ResponseEntity<?> cheerTree(@PathVariable Long treeId) {
+        Long userId = currentUser.id();
         cheerService.cheer(treeId, userId);
         return ResponseEntity.ok(cheerService.getCheerStatus(treeId, userId));
     }
