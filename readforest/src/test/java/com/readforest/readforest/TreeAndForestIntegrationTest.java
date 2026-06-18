@@ -65,6 +65,8 @@ public class TreeAndForestIntegrationTest {
         if (userRepository.count() == 0) {
             testUser = userRepository.save(User.builder()
                     .username("testuser")
+                    .password("test-seed-no-login")
+                    .role("ROLE_USER")
                     .nickname("가드너")
                     .createdAt(LocalDateTime.now())
                     .build());
@@ -82,16 +84,17 @@ public class TreeAndForestIntegrationTest {
             testBook = bookRepository.findAll().get(0);
         }
 
-        if (itemRepository.count() == 0) {
-            squirrelItem = itemRepository.save(Item.builder()
-                    .name("귀여운 다람쥐")
-                    .type(Item.ItemType.ANIMAL)
-                    .imageUrl("http://img.com")
-                    .description("다람쥐")
-                    .build());
-        } else {
-            squirrelItem = itemRepository.findAll().get(0);
-        }
+        // 카탈로그 시드(CatalogDataInit)가 Item 테이블을 채울 수 있으므로,
+        // 인덱스가 아니라 이름으로 다람쥐 아이템을 find-or-create 한다.
+        squirrelItem = itemRepository.findAll().stream()
+                .filter(i -> "귀여운 다람쥐".equals(i.getName()))
+                .findFirst()
+                .orElseGet(() -> itemRepository.save(Item.builder()
+                        .name("귀여운 다람쥐")
+                        .type(Item.ItemType.ANIMAL)
+                        .imageUrl("http://img.com")
+                        .description("다람쥐")
+                        .build()));
 
         // Add to inventory if missing
         boolean ownsItem = inventoryItemRepository.existsByUserIdAndItemId(testUser.getId(), squirrelItem.getId());
