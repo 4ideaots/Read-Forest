@@ -6,6 +6,10 @@ on:
   push:
     branches-ignore: [main]
 
+# 최소 권한: 테스트/빌드는 코드 읽기만 필요
+permissions:
+  contents: read
+
 jobs:
   backend:
     name: Backend tests
