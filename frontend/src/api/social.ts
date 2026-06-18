@@ -20,6 +20,11 @@ export function getVillage(): Promise<VillageForest[]> {
   return apiRequest<VillageForest[]>('/village');
 }
 
+// GET /api/village/public — real village data for logged-out visitors (no auth).
+export function getPublicVillage(): Promise<VillageForest[]> {
+  return apiRequest<VillageForest[]>('/village/public', { auth: false });
+}
+
 // POST /api/village/{ownerUserId}/cheer — send a cheer (water) to a forest.
 export function cheerForest(ownerUserId: number): Promise<{ ownerUserId: number; cheerCount: number }> {
   return apiRequest(`/village/${ownerUserId}/cheer`, { method: 'POST' });

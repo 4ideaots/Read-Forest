@@ -28,11 +28,20 @@ public class VillageController {
     private final CurrentUser currentUser;
 
     /**
-     * 마을의 다른 정원사 목록(정원 상태 포함)을 조회한다.
+     * 마을의 다른 정원사 목록(정원 상태 포함)을 조회한다. (로그인 사용자 — 본인 정원 제외)
      */
     @GetMapping
     public ResponseEntity<List<VillageForestDto>> getVillage() {
         return ResponseEntity.ok(villageService.list(currentUser.id()));
+    }
+
+    /**
+     * 비로그인 방문자용 공개 마을 목록. 인증 없이 실제 정원 데이터를 보여준다.
+     * 제외할 본인이 없으므로 전체를 반환한다(SecurityConfig 에서 permitAll).
+     */
+    @GetMapping("/public")
+    public ResponseEntity<List<VillageForestDto>> getPublicVillage() {
+        return ResponseEntity.ok(villageService.list(null));
     }
 
     /**

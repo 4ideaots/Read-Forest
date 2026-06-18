@@ -43,6 +43,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/auth/**",
                     "/api/accounts/signup",
+                    "/api/village/public",
                     "/oauth2/**",
                     "/login/oauth2/**"
                 ).permitAll()

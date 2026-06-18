@@ -1,0 +1,8 @@
+# 운영(EC2) 오버라이드: 서버에서 빌드하지 않고 GHCR 에 푸시된 이미지를 사용한다.
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build
+services:
+  backend:
+    image: ghcr.io/4ideaots/readforest-backend:latest
+  nginx:
+    image: ghcr.io/4ideaots/readforest-nginx:latest

@@ -526,16 +526,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     prevAuthedRef.current = isAuthed;
   }, [isAuthed]);
 
-  // Load the real village (other users' gardens) when logged in; fall back to
-  // the sample forests otherwise (e.g. the logged-out showcase).
+  // Load the real village (other users' gardens). Logged-in users get the
+  // authenticated endpoint (excludes their own garden); logged-out visitors get
+  // the public endpoint with real data. The sample forests are only a fallback
+  // when the backend is unreachable or there is no real data yet.
   useEffect(() => {
-    if (!isAuthed) {
-      setSocialForests(MOCK_SOCIAL_FORESTS);
-      return;
-    }
     void (async () => {
       try {
-        const village = await socialApi.getVillage();
+        const village = isAuthed
+          ? await socialApi.getVillage()
+          : await socialApi.getPublicVillage();
         const mapped: MockForest[] = village.map((v) => {
           let trees: MockForest['trees'] = [];
           let level = 1;
@@ -560,9 +560,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             cheerCount: v.cheerCount
           };
         });
-        if (mapped.length > 0) setSocialForests(mapped);
+        // Real data wins; otherwise keep the sample forests as a graceful fallback.
+        setSocialForests(mapped.length > 0 ? mapped : MOCK_SOCIAL_FORESTS);
       } catch {
         // backend unreachable — keep the sample forests
+        setSocialForests(MOCK_SOCIAL_FORESTS);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
