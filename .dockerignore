@@ -1,0 +1,13 @@
+.git/
+.github/
+report/
+**/node_modules/
+**/dist/
+**/build/
+**/.gradle/
+**/bin/
+**/.idea/
+**/.DS_Store
+**/.env
+!**/.env.example
+certbot/

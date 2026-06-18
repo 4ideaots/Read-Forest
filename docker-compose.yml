@@ -1,0 +1,59 @@
+services:
+  backend:
+    build:
+      context: ./readforest
+      dockerfile: Dockerfile
+    image: readforest-backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-readforest}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAKAO_API_KEY: ${KAKAO_API_KEY}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      OAUTH2_REDIRECT_URI: ${OAUTH2_REDIRECT_URI:-https://${DOMAIN}/oauth2/callback}
+      JWT_SECRET: ${JWT_SECRET}
+    expose:
+      - "8080"
+    networks:
+      - web
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    image: readforest-nginx
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    networks:
+      - web
+    # 6시간마다 reload 하여 갱신된 인증서를 반영
+    command: >
+      /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & exec nginx -g 'daemon off;'"
+
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    # 12시간마다 갱신 시도 (만료 30일 이내일 때만 실제 갱신)
+    entrypoint: >
+      /bin/sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done"
+
+networks:
+  web:

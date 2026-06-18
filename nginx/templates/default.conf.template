@@ -1,0 +1,51 @@
+# ${DOMAIN} 은 nginx 컨테이너 시작 시 envsubst 가 채워줍니다.
+# $uri, $host 등 nginx 변수는 환경변수가 아니라 그대로 보존됩니다.
+
+# ---------- HTTP: ACME 챌린지 + HTTPS 리다이렉트 ----------
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${DOMAIN};
+
+    # certbot webroot 챌린지 경로
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    # 나머지는 전부 HTTPS 로
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# ---------- HTTPS ----------
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    include             /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
+
+    # 프록시 공통 헤더 (location 들이 상속) — Spring 이 https/원본 IP 를 인식하도록
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    root  /usr/share/nginx/html;
+    index index.html;
+
+    # React SPA: 매칭되는 파일 없으면 index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 백엔드 프록시
+    location /api          { proxy_pass http://backend:8080; }
+    location /oauth2       { proxy_pass http://backend:8080; }
+    location /login/oauth2 { proxy_pass http://backend:8080; }
+}
