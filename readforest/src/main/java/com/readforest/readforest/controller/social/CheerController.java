@@ -8,7 +8,9 @@ import com.readforest.readforest.service.CheerService;
 /**
  * 응원 컨트롤러.
  *
- * <p>특정 나무에 물주기/응원하기 등의 단발성 상호작용을 담당한다.</p>
+ * <p>
+ * 특정 나무에 물주기/응원하기 등의 단발성 상호작용을 담당한다.
+ * </p>
  */
 @RestController
 @RequestMapping("/api/trees")
@@ -24,10 +26,10 @@ public class CheerController {
      */
     @PostMapping("/{treeId}/cheer")
     public ResponseEntity<?> cheerTree(
-        @PathVariable Long treeId,
-        @RequestHeader("X-User-Id") Long userId) {
-    cheerService.cheer(treeId, userId);
-    return ResponseEntity.ok(cheerService.getCheerStatus(treeId, userId));
-}
+            @PathVariable Long treeId,
+            @RequestHeader("X-User-Id") Long userId) {
+        cheerService.cheer(treeId, userId);
+        return ResponseEntity.ok(cheerService.getCheerStatus(treeId, userId));
+    }
 
 }
