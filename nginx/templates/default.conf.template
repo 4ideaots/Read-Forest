@@ -30,6 +30,10 @@ server {
     include             /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
 
+    # HSTS: 한 번 접속한 브라우저는 이후 http 입력해도 서버를 거치지 않고
+    # 자동으로 https 로 바꿔 요청 (1년). 인증서가 안정화된 뒤 유지하세요.
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
     # 프록시 공통 헤더 (location 들이 상속) — Spring 이 https/원본 IP 를 인식하도록
     proxy_set_header Host              $host;
     proxy_set_header X-Real-IP         $remote_addr;

@@ -41,9 +41,13 @@ services:
       - ./certbot/www:/var/www/certbot:ro
     networks:
       - web
-    # 6시간마다 reload 하여 갱신된 인증서를 반영
+    # 1) 공식 엔트리포인트의 템플릿 처리(envsubst)를 명시적으로 실행 → 우리 default.conf 렌더링
+    # 2) 6시간마다 reload 하여 갱신된 인증서를 반영
+    # 3) nginx 포그라운드 실행
     command: >
-      /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & exec nginx -g 'daemon off;'"
+      /bin/sh -c "/docker-entrypoint.d/20-envsubst-on-templates.sh;
+      (while :; do sleep 6h & wait $${!}; nginx -s reload; done) &
+      exec nginx -g 'daemon off;'"
 
   certbot:
     image: certbot/certbot
