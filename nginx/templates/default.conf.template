@@ -40,6 +40,11 @@ server {
     proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
 
+    # Docker 내장 DNS 로 backend 를 "요청 시점"에 해석한다.
+    # → 기동 순서/일시적 다운에도 nginx 가 죽지 않음 (host not found in upstream 방지)
+    resolver 127.0.0.11 valid=10s;
+    set $upstream backend:8080;
+
     root  /usr/share/nginx/html;
     index index.html;
 
@@ -48,8 +53,8 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
-    # 백엔드 프록시
-    location /api          { proxy_pass http://backend:8080; }
-    location /oauth2       { proxy_pass http://backend:8080; }
-    location /login/oauth2 { proxy_pass http://backend:8080; }
+    # 백엔드 프록시 (변수 사용 → startup 시 DNS 해석 강제 안 함)
+    location /api          { proxy_pass http://$upstream; }
+    location /oauth2       { proxy_pass http://$upstream; }
+    location /login/oauth2 { proxy_pass http://$upstream; }
 }

@@ -57,6 +57,7 @@ compose run --rm --entrypoint "\
     $staging_arg \
     --email $email \
     -d $domain \
+    --cert-name $domain \
     --rsa-key-size $rsa_key_size \
     --agree-tos \
     --no-eff-email \
