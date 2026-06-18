@@ -428,7 +428,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     JSON.stringify({ books, trees, decorations, user, biome });
 
   // On login, load this user's garden from the DB and hydrate the UI. If the
-  // account has no saved garden yet, push the current local state up as a seed.
+  // account has no saved garden yet, seed a fresh INITIAL garden (never inherit
+  // leftover local state from a previous account on this device).
   useEffect(() => {
     if (!isAuthed) {
       gardenLoadedRef.current = false;
@@ -449,8 +450,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (s.biome) setBiome(s.biome);
           setNotice('🌐 저장된 정원을 불러왔어요.');
         } else {
-          // First login on this account — seed the DB with current state.
-          await gardenApi.saveGardenState(serializeGarden());
+          // 이 계정에 저장된 정원이 없음(첫 로그인). 직전 세션/다른 계정의 로컬
+          // 정원을 물려받지 않도록, 항상 INITIAL 로 시작해서 그걸 DB 에 시드한다.
+          hydratingRef.current = true;
+          const fresh = { books: INITIAL_BOOKS, trees: INITIAL_TREES, decorations: INITIAL_DECORATIONS, user: INITIAL_USER, biome: 'spring' as const };
+          setBooks(fresh.books);
+          setTrees(fresh.trees);
+          setDecorations(fresh.decorations);
+          setUser(fresh.user);
+          setBiome(fresh.biome);
+          await gardenApi.saveGardenState(JSON.stringify(fresh));
         }
       } catch {
         // backend unreachable — fall back to local state
@@ -509,22 +518,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // On logout, clear the in-memory garden so leftover data can't leak into the
-  // next account that logs in on this device. The real garden stays safe in the
-  // DB and is reloaded on the next login.
-  const prevAuthedRef = useRef(isAuthed);
-  useEffect(() => {
-    if (prevAuthedRef.current && !isAuthed) {
-      setBooks(INITIAL_BOOKS);
-      setTrees(INITIAL_TREES);
-      setDecorations(INITIAL_DECORATIONS);
-      setUser(INITIAL_USER);
-      const today = new Date().toISOString().split('T')[0];
-      setQuests([...makeDailyQuests(today), makeWeeklyQuest()]);
-      setBiome('spring');
-    }
-    prevAuthedRef.current = isAuthed;
-  }, [isAuthed]);
+  // 로그아웃해도 정원을 그대로 둔다 — 로그인/비로그인 화면이 동일하게 보이도록.
+  // (계정 전환 시 이전 정원이 새 계정에 섞이지 않도록, 첫 로그인 하이드레이션에서
+  //  DB 가 비어 있으면 INITIAL 로 초기화한다 — 아래 garden hydration 참고.)
 
   // Load the real village (other users' gardens). Logged-in users get the
   // authenticated endpoint (excludes their own garden); logged-out visitors get
