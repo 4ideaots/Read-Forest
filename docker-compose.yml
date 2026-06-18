@@ -12,10 +12,12 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       KAKAO_API_KEY: ${KAKAO_API_KEY}
-      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-}
-      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-}
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      # OAuth2: .env 가 비어 있으면 더미값을 넣어 등록 검증만 통과시킨다(로그인 자체는 비활성).
+      # 실제 소셜 로그인을 켜려면 .env 에 진짜 키를 채우면 그 값이 우선 적용된다.
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-disabled}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-disabled}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-disabled}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-disabled}
       OAUTH2_REDIRECT_URI: ${OAUTH2_REDIRECT_URI:-https://${DOMAIN}/oauth2/callback}
       JWT_SECRET: ${JWT_SECRET}
     expose:
