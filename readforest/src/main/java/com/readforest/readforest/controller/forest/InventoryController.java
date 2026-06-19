@@ -1,11 +1,10 @@
 package com.readforest.readforest.controller.forest;
 
 import com.readforest.readforest.dto.InventoryItemResponseDto;
+import com.readforest.readforest.security.CurrentUser;
 import com.readforest.readforest.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +21,7 @@ import java.util.List;
 public class InventoryController {
 
     private final InventoryService inventoryService;
+    private final CurrentUser currentUser;
 
     /**
      * 현재 로그인한 사용자의 보유 아이템 목록을 조회한다.
@@ -30,21 +30,7 @@ public class InventoryController {
      */
     @GetMapping("/items")
     public ResponseEntity<List<InventoryItemResponseDto>> getMyItems() {
-        Long userId = getCurrentUserId();
-        List<InventoryItemResponseDto> response = inventoryService.getUserInventory(userId);
+        List<InventoryItemResponseDto> response = inventoryService.getUserInventory(currentUser.id());
         return ResponseEntity.ok(response);
-    }
-
-    private Long getCurrentUserId() {
-        try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.isAuthenticated() 
-                    && !"anonymousUser".equals(authentication.getPrincipal())) {
-                // Future JWT / Authentication integration
-            }
-        } catch (Exception e) {
-            // ignore
-        }
-        return 1L; // Fallback to test user ID 1L
     }
 }

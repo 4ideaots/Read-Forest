@@ -2,12 +2,11 @@ package com.readforest.readforest.controller.forest;
 
 import com.readforest.readforest.dto.DecorationRequestDto;
 import com.readforest.readforest.dto.DecorationResponseDto;
+import com.readforest.readforest.security.CurrentUser;
 import com.readforest.readforest.service.ForestDecorationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -22,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class ForestDecorationController {
 
     private final ForestDecorationService forestDecorationService;
+    private final CurrentUser currentUser;
 
     /**
      * 숲 꾸미기 아이템을 배치하거나 해제한다.
@@ -32,21 +32,7 @@ public class ForestDecorationController {
     @PutMapping
     public ResponseEntity<DecorationResponseDto> updateDecorations(
             @Valid @RequestBody DecorationRequestDto request) {
-        Long userId = getCurrentUserId();
-        DecorationResponseDto response = forestDecorationService.updateDecorations(userId, request);
+        DecorationResponseDto response = forestDecorationService.updateDecorations(currentUser.id(), request);
         return ResponseEntity.ok(response);
-    }
-
-    private Long getCurrentUserId() {
-        try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.isAuthenticated() 
-                    && !"anonymousUser".equals(authentication.getPrincipal())) {
-                // Future JWT / Authentication integration
-            }
-        } catch (Exception e) {
-            // ignore
-        }
-        return 1L; // Fallback to test user ID 1L
     }
 }
